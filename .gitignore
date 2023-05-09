@@ -1,3 +1,4 @@
 .env
+.env.old
 containers/**/volume/data
 containers/postgres/volume/scripts/custom.sh

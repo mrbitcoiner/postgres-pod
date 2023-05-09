@@ -30,7 +30,6 @@ frontend http_adminer
 backend http_adminer
 	mode http
 	balance roundrobin
-	option httpchk HEAD /
  	http-response set-header X-Frame-Options SAMEORIGIN
       	http-response set-header X-XSS-Protection 1;mode=block
       	http-response set-header X-Content-Type-Options nosniff

@@ -68,7 +68,7 @@ teardown(){
 clean(){
   printf "Are you sure? (Y/any): "
   read input
-  if ! echo ${input} | grep '^y$' > /dev/null; then
+  if ! echo ${input} | grep '^Y$' > /dev/null; then
     printf 'Aborted\n'; return 1
   fi
   for i in "${CONTAINERS[@]}"; do
