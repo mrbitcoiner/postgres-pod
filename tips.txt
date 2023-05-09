@@ -1,0 +1,20 @@
+# Dump database
+pg_dump db_name > path/to/dump/file.sql
+
+# Restore database from dump
+psql db_name < path/to/dump/file.sql
+
+# list databases (inside psql)
+\l
+
+# connect database (inside psql)
+\c db_name
+
+# list tables and views (inside psql)
+\d
+
+# list tables (inside psql)
+\dt
+
+# Execute query from bash
+psql -d db_name -c 'select 1 as test;'
