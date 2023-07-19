@@ -122,5 +122,5 @@ case ${1} in
   psql) psql "${2}" "${3}" ;;
   down) teardown ;;
   clean) clean ;;
-  *) printf 'Expected: [ build | up | down | loaddb | dumpdb | createdb | dropdb | psql | clean | help ]\n'; exit 1 ;;
+  *) printf 'Usage: [ build | up | down | loaddb | dumpdb | createdb | dropdb | psql | clean | help ]\n'; exit 1 ;;
 esac

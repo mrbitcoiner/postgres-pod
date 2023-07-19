@@ -2,29 +2,34 @@
 ## A simple container environment with PostgreSql
 
 
-### Instructions
+### Getting Started
 
 * Copy and modify .env.example as you want (postgres password inside the file):
 ```bash
 cp .env.example .env
 ```
 
-* To run:
+* Build the image:
+```bash
+./control.sh build
+```
+
+* Start the container:
 ```bash
 ./control.sh up
 ```
 
-* To stop:
+* Stop the container:
 ```bash
 ./control.sh down
 ```
 
-* To clean all the data:
+* Clean all the data:
 ```bash
 ./control.sh clean 
 ```
 
-* Probably you will need to dump/restore databases, you can access postgres container with the following command
+* Check control options:
 ```bash
-docker exec -it postgres bash
+./control.sh help
 ```
