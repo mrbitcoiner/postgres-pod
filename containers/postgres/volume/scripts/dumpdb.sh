@@ -7,8 +7,7 @@ readonly DUMP_LABEL="${2}"
 readonly DUMP_PATH='/app/data/dump'
 ####################
 mkdirs(){
-  mkdir -p ${DUMP_PATH}
-  chown -R ${CONTAINER_USER}:${CONTAINER_USER} ${DUMP_PATH}
+  su -c "mkdir -p ${DUMP_PATH}" ${CONTAINER_USER}
 }
 check_vars(){
   if [ -z "${DB_NAME}" ]; then printf 'Undefined DB_NAME\n' 1>&2; return 1; fi
