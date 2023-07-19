@@ -3,6 +3,7 @@
 set -e
 #############################
 
+#############################
 if [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ]; then
     printf "Expected: [ username ] [ user_id ] [ group_id ]";
     exit 1

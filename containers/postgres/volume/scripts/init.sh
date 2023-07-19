@@ -2,13 +2,15 @@
 ####################
 set -e
 ####################
+chown -R ${CONTAINER_USER}:${CONTAINER_USER} /var/lib/postgresql/data /var/run/postgresql
 
-chown -R ${POSTGRES_USER} /app
-
-su -c "docker-entrypoint.sh postgres" ${POSTGRES_USER} &
-
-if [ -e /app/scripts/custom.sh ]; then
-  /app/scripts/custom.sh
+if [ -e /app/scripts/custom/init.sh ]; then
+  /app/scripts/custom/init.sh
 fi
 
-tail -f /dev/null
+su -c 'docker-entrypoint.sh postgres' ${CONTAINER_USER} &
+echo $! > /app/data/postgres.pid
+
+while kill -0 $(cat /app/data/postgres.pid) >/dev/null 2>&1; do 
+  sleep 1
+done

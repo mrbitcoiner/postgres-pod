@@ -1,5 +1,5 @@
 # Docker Postgres
-## A simple dockerized ambient with PostgreSql + Adminer over HTTPS
+## A simple container environment with PostgreSql
 
 
 ### Instructions
@@ -28,5 +28,3 @@ cp .env.example .env
 ```bash
 docker exec -it postgres bash
 ```
-
-* Custom configuration for the postgres container will be executed after postgres initialization if inside 'containers/postgres/volume/scripts/custom.sh' (you may create this file)
