@@ -40,7 +40,6 @@ run_schedule(){
   for database in "${schedules[@]}"; do
     /app/scripts/dumpdb.sh "${database}" "${database}_${SCHEDULE_TYPE}.sql" 2>&1 | xargs -I %s printf "[$(date +%F_%H-%M-%S)] | %s\n" | su -c 'tee -a /tmp/dump_schedule.log' ${CONTAINER_USER}
   done
-  echo "${schedules[@]}" > ${CONFIG_PATH}/${SCHEDULE_TYPE}
 }
 remove_pidfile(){
   rm ${PIDFILE_PATH}
