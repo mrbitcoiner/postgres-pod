@@ -17,6 +17,4 @@ COPY ./volume/scripts /scripts
 
 RUN /scripts/user_setup.sh ${CONTAINER_USER} ${CONTAINER_UID} ${CONTAINER_GID}
 
-
 ENTRYPOINT ["/scripts/init.sh"]
-

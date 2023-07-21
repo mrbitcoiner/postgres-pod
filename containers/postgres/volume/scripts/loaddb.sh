@@ -16,11 +16,12 @@ check_db_already_exists(){
     printf "Database ${DB_NAME} already exists\n"; return 1
   fi
 }
-drop_db(){
+load_db(){
+  if ! [ -e "${DUMP_PATH}/${DUMP_LABEL}" ]; then printf "Dump file ${DUMP_PATH}/${DUMP_LABEL} does not exist\n" 1>&2; return 1; fi
   /app/scripts/createdb.sh "${DB_NAME}"
   su -c "psql ${DB_NAME} < ${DUMP_PATH}/${DUMP_LABEL}" ${CONTAINER_USER}
 }
 ####################
 check_vars
 check_db_already_exists
-drop_db
+load_db

@@ -18,6 +18,11 @@ check_db_already_exists(){
     printf "Database ${DB_NAME} does not exist\n"; return 1
   fi
 }
+rename_if_dump_already_exists(){
+  if [ -e "${DUMP_PATH}/${DUMP_LABEL}" ]; then 
+    mv ${DUMP_PATH}/${DUMP_LABEL} ${DUMP_PATH}/${DUMP_LABEL}.old
+  fi
+}
 dump_db(){
   su -c "pg_dump ${DB_NAME} > ${DUMP_PATH}/${DUMP_LABEL}" ${CONTAINER_USER}
   printf "Sucessfully dumped ${DB_NAME} to ${DUMP_PATH}/${DUMP_LABEL}\n"
@@ -26,4 +31,5 @@ dump_db(){
 check_vars
 mkdirs
 check_db_already_exists
+rename_if_dump_already_exists
 dump_db
