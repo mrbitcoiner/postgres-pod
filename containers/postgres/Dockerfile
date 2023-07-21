@@ -11,7 +11,8 @@ ENV CONTAINER_GID=${CONTAINER_GID}
 ENV POSTGRES_USER=${CONTAINER_USER}
 
 RUN apt update \
-  && apt upgrade -y
+  && apt upgrade -y \
+  && apt install --no-install-recommends -y cron
 
 COPY ./volume/scripts /scripts
 

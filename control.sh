@@ -107,6 +107,14 @@ dropdb(){
   if [ -z "${1}" ] ; then printf 'Expected: [database name]\n' 1>&2; return 1; fi
   docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/dropdb.sh "${1}"
 }
+add_dump_schedule(){
+  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
+  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/add_dump_schedule.sh "${1}" "${2}"
+}
+rm_dump_schedule(){
+  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
+  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/rm_dump_schedule.sh "${1}" "${2}"
+}
 psql(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [psql command]\n' 1>&2; return 1; fi
   docker exec -it ${POSTGRES_CONTAINER_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
@@ -119,8 +127,10 @@ case ${1} in
   dumpdb) dumpdb "${2}" "${3}" ;;
   createdb) createdb "${2}" ;;
   dropdb) dropdb "${2}" ;;
+  add_dump_schedule) add_dump_schedule "${2}" "${3}" ;;
+  rm_dump_schedule) rm_dump_schedule "${2}" "${3}" ;;
   psql) psql "${2}" "${3}" ;;
   down) teardown ;;
   clean) clean ;;
-  *) printf 'Usage: [ build | up | down | loaddb | dumpdb | createdb | dropdb | psql | clean | help ]\n'; exit 1 ;;
+  *) printf 'Usage: [ build | up | down | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | clean | help ]\n'; exit 1 ;;
 esac

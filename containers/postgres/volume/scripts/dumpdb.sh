@@ -25,7 +25,7 @@ rename_if_dump_already_exists(){
 }
 dump_db(){
   su -c "pg_dump ${DB_NAME} > ${DUMP_PATH}/${DUMP_LABEL}" ${CONTAINER_USER}
-  printf "Sucessfully dumped ${DB_NAME} to ${DUMP_PATH}/${DUMP_LABEL}\n"
+  printf "Successfully dumped ${DB_NAME} to ${DUMP_PATH}/${DUMP_LABEL}\n"
 }
 ####################
 check_vars
