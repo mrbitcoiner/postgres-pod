@@ -20,7 +20,7 @@ check_db_already_exists(){
 }
 rename_if_dump_already_exists(){
   if [ -e "${DUMP_PATH}/${DUMP_LABEL}" ]; then 
-    mv ${DUMP_PATH}/${DUMP_LABEL} ${DUMP_PATH}/${DUMP_LABEL}.old
+    su -c "mv ${DUMP_PATH}/${DUMP_LABEL} ${DUMP_PATH}/${DUMP_LABEL}.old" ${CONTAINER_USER}
   fi
 }
 dump_db(){
