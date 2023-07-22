@@ -41,6 +41,26 @@ cp .env.example .env
 
 ### Upgrading
 
+* With the container running, dump your databases:
+```bash
+./control.sh dumpdb <db_name> <dump_label>
+```
+
+* Stop the containers:
+```bash
+./control.sh down
+```
+
+* Pull master:
+```bash
+git pull origin master
+```
+
+* Delete postgres data:
+```bash
+rm -rfv ./containers/postgres/volume/data/postgres
+```
+
 * Build the image:
 ```bash
 ./control.sh build
@@ -49,6 +69,11 @@ cp .env.example .env
 * Start the container:
 ```bash
 ./control.sh up
+```
+
+* Restore your databases from dumps:
+```bash
+./control.sh loaddb <db_name> <dump_label>
 ```
 
 ### If you have some improvement suggestion, please leave it in the issues section.
