@@ -2,12 +2,13 @@
 ####################
 set -e
 ####################
-if [ -e .env ]; then
-  source .env
+readonly REL_DIR="$(dirname ${0})"
+if [ -e "${REL_DIR}/.env" ]; then
+  source ${REL_DIR}/.env
 fi
 ####################
 check_env(){
-  if ! [ -e .env ]; then printf 'You must copy .env.example to .env\n' 1>&2; return 1; fi
+  if ! [ -e ${REL_DIR}/.env ]; then printf 'You must copy .env.example to .env\n' 1>&2; return 1; fi
   if [ -z "${POSTGRES_CONTAINER_NAME}" ]; then printf 'Undefined env POSTGRES_CONTAINER_NAME\n' 1>&2; return 1; fi
   if [ -z "${ADMINER_CONTAINER_NAME}" ]; then printf 'Undefined env ADMINER_CONTAINER_NAME\n' 1>&2; return 1; fi
   if [ -z "${EXTERNAL_NETWORK}" ]; then printf 'Undefined env EXTERNAL_NETWORK\n' 1>&2; return 1; fi
