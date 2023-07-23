@@ -118,7 +118,7 @@ rm_dump_schedule(){
 }
 psql(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [psql command]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
+  docker exec ${POSTGRES_CONTAINER_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
 }
 ####################
 case ${1} in
