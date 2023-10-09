@@ -25,7 +25,7 @@ loop_while_running_and_timeout_not_reached(){
     printf '\r'
     printf "\rWaiting ${CONTAINER_NAME} shutdown ${count}/${TIMEOUT_SECS}s"
     sleep 1
-    count=$["${count}" + 1]
+    count="$(( ${count} + 1 ))"
   done
   printf '\n'
 }
