@@ -1,5 +1,5 @@
-# Docker Postgres
-## A simple container environment with PostgreSql
+# Postgres Pod
+## A simple container environment with PostgreSql and Adminer
 
 ### CLI Features
 * Create databases
@@ -56,11 +56,6 @@ cp .env.example .env
 git pull origin master
 ```
 
-* Delete postgres data:
-```bash
-rm -rfv ./containers/postgres/volume/data/postgres
-```
-
 * Build the image:
 ```bash
 ./control.sh build
@@ -76,4 +71,4 @@ rm -rfv ./containers/postgres/volume/data/postgres
 ./control.sh loaddb <db_name> <dump_label>
 ```
 
-### If you have some improvement suggestion, please leave it in the issues section.
+### If you have some improvement suggestion, please leave it in the issues.
