@@ -2,128 +2,97 @@
 ####################
 set -e
 ####################
-readonly REL_DIR="$(dirname ${0})"
-if [ -e "${REL_DIR}/.env" ]; then
-  source ${REL_DIR}/.env
-fi
+source .env
 ####################
-check_env(){
-  if ! [ -e ${REL_DIR}/.env ]; then printf 'You must copy .env.example to .env\n' 1>&2; return 1; fi
-  if [ -z "${POSTGRES_CONTAINER_NAME}" ]; then printf 'Undefined env POSTGRES_CONTAINER_NAME\n' 1>&2; return 1; fi
-  if [ -z "${ADMINER_CONTAINER_NAME}" ]; then printf 'Undefined env ADMINER_CONTAINER_NAME\n' 1>&2; return 1; fi
-  if [ -z "${EXTERNAL_NETWORK}" ]; then printf 'Undefined env EXTERNAL_NETWORK\n' 1>&2; return 1; fi
-  if [ -z "${POSTGRES_PASSWORD}" ]; then printf 'Undefined env POSTGRES_PASSWORD\n' 1>&2; return 1; fi
-  if [ -z "${POSTGRES_EXT_PORT}" ]; then printf 'Undefined env POSTGRES_EXT_PORT\n' 1>&2; return 1; fi
-  if [ -z "${ADMINER_EXT_PORT}" ]; then printf 'Undefined env ADMINER_EXT_PORT\n' 1>&2; return 1; fi
+readonly HELP_MSG='usage: < build | up | down | clean | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | help >'
+readonly RELDIR="$(dirname ${0})"
+####################
+eprintln(){
+	! [ -z "${1}" ] || eprintln 'eprintln err: undefined message'
+	printf "${1}\n" 1>&2
+	return 1
 }
-create_directories(){
-  mkdir -p containers/postgres/volume/scripts
-  mkdir -p containers/postgres/volume/data
+check_env(){
+	! [ -z "${PG_IMG_NAME}" ] || eprintln 'missing env PG_IMG_NAME'
+	! [ -z "${PG_CT_NAME}" ] || eprintln 'missing env PG_CT_NAME'
+	! [ -z "${PG_PORT}" ] || eprintln 'missing env PG_PORT'
+	! [ -z "${POSTGRES_PASSWORD}" ] || eprintln 'missing env POSTGRES_PASSWORD'
+	! [ -z "${ADMINER_CT_NAME}" ] || eprintln 'missing env ADMINER_CT_NAME'
+	! [ -z "${ADMINER_PORT}" ] || eprintln 'missing env ADMINER_PORT'
+}
+mkdirs(){
+	mkdir -p "${RELDIR}"/data/postgres
+	mkdir -p "${RELDIR}"/data/data
 }
 set_scripts_permissions(){
-  if [ -e ./containers/postgres/volume/scripts/init.sh ]; then
-    chmod +x ./containers/postgres/volume/scripts/*.sh
-  fi
-  if [ -e ./scripts/container_stop.sh ]; then
-    chmod +x ./scripts/*.sh
-  fi
+	chmod +x "${RELDIR}"/scripts/*.sh 1>/dev/null 2>&1 || true
+	chmod +x "${RELDIR}"/scripts/postgres/*.sh 1>/dev/null 2>&1 || true
 }
-create_docker_network(){
-  if ! docker network ls | awk '{print $2}' | grep "^${EXTERNAL_NETWORK}$" > /dev/null; then
-    docker network create -d bridge "${EXTERNAL_NETWORK}"
-  fi
-}
-create_docker_compose(){
-  cat << EOF > docker-compose.yml
-services:
-  postgres:
-    container_name: ${POSTGRES_CONTAINER_NAME}
-    build: containers/postgres
-    volumes:
-      - ./containers/postgres/volume:/app
-      - ./containers/postgres/volume/data/postgres:/var/lib/postgresql/data
-    environment:
-     - POSTGRES_USER=${USER}
-     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    networks:
-      - postgres
-    ports:
-      - ${POSTGRES_EXT_PORT}:5432
-
-  adminer:
-    container_name: ${ADMINER_CONTAINER_NAME} 
-    image: adminer:4.8.1-standalone
-    networks:
-      - postgres 
-    ports:
-      - ${ADMINER_EXT_PORT}:8080
-
-networks:
-  postgres:
-    name: ${EXTERNAL_NETWORK} 
-    external: true
-EOF
-}
-####################
-build_up_common(){
-  check_env
-  set_scripts_permissions
-  create_docker_network
-  create_docker_compose
+common(){
+	check_env
+	mkdirs
+	set_scripts_permissions
 }
 build(){
-  build_up_common
-  docker-compose build \
-    --build-arg CONTAINER_USER=${USER} \
-    --build-arg CONTAINER_UID=$(id -u) \
-    --build-arg CONTAINER_GID=$(id -g) 
+	common
+	podman build \
+		-f "${RELDIR}"/Dockerfile-postgres \
+		--tag "${PG_IMG_NAME}" \
+		"${RELDIR}"
 }
 up(){
-  build_up_common
-  docker-compose up --remove-orphans &
-}
-teardown(){
-  ./scripts/container_stop.sh "${POSTGRES_CONTAINER_NAME}"
-  docker-compose down
+	common
+	podman run --rm \
+		-p="${PG_PORT}:5432" \
+		-v="${RELDIR}/data:/app" \
+		-v="${RELDIR}/data/postgres:/var/lib/postgresql/data" \
+		--env 'CONTAINER_USER=root' \
+		--env 'POSTGRES_USER=root' \
+		--env-file="${RELDIR}/.env" \
+		--name="${PG_CT_NAME}" \
+		localhost/"${PG_IMG_NAME}" &
 }
 clean(){
-  printf 'Are you sure? (Y/n): '
-  read input
-  if [ "${input}" != "Y" ]; then printf 'Abort!\n' 1>&2; return 1; fi
-  rm -rfv ./containers/postgres/volume/data
+	printf "This will clean all data. Are you sure? (Y/n): "
+	read input
+	[ "${input}" == "Y" ] || eprintln 'ABORT!'
+	rm -rf "${RELDIR}"/data
 }
 loaddb(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [dump_label]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/loaddb.sh "${1}" "${2}"
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/loaddb.sh "${1}" "${2}"
 }
 dumpdb(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [dump_label]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/dumpdb.sh "${1}" "${2}"
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/dumpdb.sh "${1}" "${2}"
 }
 createdb(){
   if [ -z "${1}" ] ; then printf 'Expected: [database name]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/createdb.sh "${1}" 
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/createdb.sh "${1}" 
 }
 dropdb(){
   if [ -z "${1}" ] ; then printf 'Expected: [database name]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/dropdb.sh "${1}"
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/dropdb.sh "${1}"
 }
 add_dump_schedule(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/add_dump_schedule.sh "${1}" "${2}"
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/add_dump_schedule.sh "${1}" "${2}"
 }
 rm_dump_schedule(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
-  docker exec -it ${POSTGRES_CONTAINER_NAME} /app/scripts/rm_dump_schedule.sh "${1}" "${2}"
+  podman exec -it ${PG_CT_NAME} /static/scripts/postgres/rm_dump_schedule.sh "${1}" "${2}"
 }
 psql(){
   if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [psql command]\n' 1>&2; return 1; fi
-  docker exec ${POSTGRES_CONTAINER_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
+  podman exec ${PG_CT_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
 }
 ####################
 case ${1} in
-  build) build ;;
-  up) up ;;
+	build) build ;;
+	up) up ;;
+	down) down ;;
+	clean) clean ;;
+
   loaddb) loaddb "${2}" "${3}" ;;
   dumpdb) dumpdb "${2}" "${3}" ;;
   createdb) createdb "${2}" ;;
@@ -131,7 +100,8 @@ case ${1} in
   add_dump_schedule) add_dump_schedule "${2}" "${3}" ;;
   rm_dump_schedule) rm_dump_schedule "${2}" "${3}" ;;
   psql) psql "${2}" "${3}" ;;
-  down) teardown ;;
-  clean) clean ;;
-  *) printf 'Usage: [ build | up | down | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | clean | help ]\n'; exit 1 ;;
+
+	*) eprintln "${HELP_MSG}" ;;
 esac
+
+

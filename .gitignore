@@ -1,4 +1,5 @@
 .env
-containers/**/volume/data
-containers/postgres/volume/scripts/custom
+data/
+containers/
 docker-compose.yml
+*.old
