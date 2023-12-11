@@ -3,9 +3,9 @@
 set -e
 ####################
 readonly SCHEDULE_TYPE="${1}"
-readonly DUMP_PATH='/app/data/dump'
-readonly CONFIG_PATH='/app/data/config/dump/schedule'
-readonly PIDFILE_PATH='/app/data/config/dump/dump.pid'
+readonly DUMP_PATH='/data/dump'
+readonly CONFIG_PATH='/data/config/dump/schedule'
+readonly PIDFILE_PATH='/data/config/dump/dump.pid'
 ####################
 check_no_schedule_running(){
   if [ -e ${PIDFILE_PATH} ] && kill -0 $(cat ${PIDFILE_PATH}) > /dev/null 2>&1; then
@@ -13,7 +13,7 @@ check_no_schedule_running(){
   fi
 }
 set_pidfile(){
-  if ! su -c "printf $$ > ${PIDFILE_PATH}" ${CONTAINER_USER}; then
+  if ! printf $$ > ${PIDFILE_PATH}; then
     printf 'Error creating pidfile. Did you already setted up some schedule entry?\n' 1>&2; return 1
   fi
 }
@@ -38,7 +38,9 @@ check_schedule_exists(){
 run_schedule(){
   local schedules=($(cat ${CONFIG_PATH}/${SCHEDULE_TYPE}))
   for database in "${schedules[@]}"; do
-    /static/scripts/postgres/dumpdb.sh "${database}" "${database}_${SCHEDULE_TYPE}.sql" 2>&1 | xargs -I %s printf "[$(date +%F_%H-%M-%S)] | %s\n" | su -c 'tee -a /tmp/dump_schedule.log' ${CONTAINER_USER}
+    /static/scripts/postgres/dumpdb.sh "${database}" "${database}_${SCHEDULE_TYPE}.sql" 2>&1 \
+		| xargs -I %s printf "[$(date +%F_%H-%M-%S)] | %s\n" \
+		| tee -a /data/dump_schedule.log
   done
 }
 remove_pidfile(){

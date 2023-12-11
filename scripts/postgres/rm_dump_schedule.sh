@@ -4,8 +4,8 @@ set -e
 ####################
 readonly DB_NAME="${1}"
 readonly SCHEDULE_TYPE="${2}"
-readonly DUMP_PATH='/app/data/dump'
-readonly CONFIG_PATH='/app/data/config/dump/schedule'
+readonly DUMP_PATH='/data/dump'
+readonly CONFIG_PATH='/data/config/dump/schedule'
 ####################
 check_input(){
   if [ -z "${DB_NAME}" ] || [ -z "${SCHEDULE_TYPE}" ]; then printf 'Expected: [database] [schedule type]\n' 1>&2; return 1; fi

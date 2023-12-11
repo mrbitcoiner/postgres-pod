@@ -3,10 +3,10 @@
 set -e
 ####################
 shutdown(){
-  kill -2 $(cat /app/data/postgres.pid)
+  kill -2 $(cat /data/postgres.pid)
 }
 shutdown_loop(){
-  while kill -0 $(cat /app/data/postgres.pid) >/dev/null 2>&1; do
+  while kill -0 $(cat /data/postgres.pid) >/dev/null 2>&1; do
     sleep 1
   done
 }

@@ -3,3 +3,4 @@ data/
 containers/
 docker-compose.yml
 *.old
+**/*.swp

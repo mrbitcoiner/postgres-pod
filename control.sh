@@ -23,7 +23,7 @@ check_env(){
 }
 mkdirs(){
 	mkdir -p "${RELDIR}"/data/postgres
-	mkdir -p "${RELDIR}"/data/data
+	mkdir -p "${RELDIR}"/data
 }
 set_scripts_permissions(){
 	chmod +x "${RELDIR}"/scripts/*.sh 1>/dev/null 2>&1 || true
@@ -46,7 +46,7 @@ up(){
 	common
 	podman run --rm \
 		-p="${PG_PORT}:5432" \
-		-v="${RELDIR}/data:/app" \
+		-v="${RELDIR}/data:/data" \
 		-v="${RELDIR}/data/postgres:/var/lib/postgresql/data" \
 		--env 'CONTAINER_USER=root' \
 		--env 'POSTGRES_USER=root' \
@@ -60,8 +60,9 @@ up(){
 		${ADMINER_IMG_NAME} &
 }
 down(){
-	podman stop ${ADMINER_CT_NAME} || true
-	podman stop ${PG_CT_NAME} || true
+	scripts/container_stop.sh "${PG_CT_NAME}" || true
+	podman stop ${PG_CT_NAME} 1>/dev/null 2>&1 || true
+	podman stop ${ADMINER_CT_NAME} 1>/dev/null 2>&1 || true
 }
 clean(){
 	printf "This will clean all data. Are you sure? (Y/n): "
@@ -70,32 +71,32 @@ clean(){
 	rm -rf "${RELDIR}"/data
 }
 loaddb(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [dump_label]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] || [ -z "${2}" ]; then eprintln 'Expected: [database name] [dump_label]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/loaddb.sh "${1}" "${2}"
 }
 dumpdb(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [dump_label]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] || [ -z "${2}" ]; then eprintln 'Expected: [database name] [dump_label]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/dumpdb.sh "${1}" "${2}"
 }
 createdb(){
-  if [ -z "${1}" ] ; then printf 'Expected: [database name]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] ; then eprintln 'Expected: [database name]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/createdb.sh "${1}" 
 }
 dropdb(){
-  if [ -z "${1}" ] ; then printf 'Expected: [database name]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] ; then eprintln 'Expected: [database name]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/dropdb.sh "${1}"
 }
 add_dump_schedule(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] || [ -z "${2}" ]; then eprintln 'Expected: [database name] [schedule type]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/add_dump_schedule.sh "${1}" "${2}"
 }
 rm_dump_schedule(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [schedule type]\n' 1>&2; return 1; fi
+  if [ -z "${1}" ] || [ -z "${2}" ]; then eprintln 'Expected: [database name] [schedule type]\n'; fi
   podman exec -it ${PG_CT_NAME} /static/scripts/postgres/rm_dump_schedule.sh "${1}" "${2}"
 }
 psql(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then printf 'Expected: [database name] [psql command]\n' 1>&2; return 1; fi
-  podman exec ${PG_CT_NAME} su -c "psql -d \"${1}\" -c \"${2}\"" ${USER}
+  if [ -z "${1}" ] || [ -z "${2}" ]; then eprintln 'Expected: [database name] [psql command]\n'; fi
+  podman exec ${PG_CT_NAME} psql -d "${1}"  -c "${2}"
 }
 ####################
 case ${1} in

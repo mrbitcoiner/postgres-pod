@@ -9,10 +9,10 @@ check_vars(){
   if [ -z "${CONTAINER_NAME}" ]; then printf 'Expected: CONTAINER_NAME\n' 1>&2; return 1; fi
 }
 order_shutdown(){
-  docker exec ${CONTAINER_NAME} /app/scripts/shutdown.sh || true
+  podman exec ${CONTAINER_NAME} /static/scripts/postgres/shutdown.sh || true
 }
 container_running(){
-  if docker ps -f name="${CONTAINER_NAME}" | grep "^.*   ${CONTAINER_NAME}$" 2>&1>/dev/null; then
+  if podman ps -f name="${CONTAINER_NAME}" | grep "^.* ${CONTAINER_NAME}$" 2>&1>/dev/null; then
     return 0
   else
     return 1

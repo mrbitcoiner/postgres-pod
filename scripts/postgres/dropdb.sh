@@ -9,7 +9,7 @@ check_vars(){
   if [ "$DB_NAME" == 'postgres' ]; then printf 'Database postgres should not be deleted\n' 1>&2; return 1; fi
 }
 check_db_already_exists(){
-  if ! su -c "psql -d '${DB_NAME}' -c 'select 1;' > /dev/null 2>&1" ${CONTAINER_USER}; then
+  if ! psql -d "${DB_NAME}" -c "select 1;" > /dev/null 2>&1; then
     printf "Database ${DB_NAME} does not exist\n"; return 1
   fi
 }
@@ -17,7 +17,7 @@ drop_db(){
   printf "Are you sure that you want to delete ${DB_NAME} database? (Y/n): "
   read input
   if [ "${input}" != 'Y' ]; then printf 'Abort!\n' 1>&2; return 1; fi
-  su -c "psql -d 'postgres' -c 'DROP DATABASE ${DB_NAME};'" ${CONTAINER_USER}
+  psql -d "postgres" -c "DROP DATABASE ${DB_NAME};"
 }
 ####################
 check_vars
