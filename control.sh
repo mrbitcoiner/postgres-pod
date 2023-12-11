@@ -6,6 +6,7 @@ source .env
 ####################
 readonly HELP_MSG='usage: < build | up | down | clean | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | help >'
 readonly RELDIR="$(dirname ${0})"
+readonly ADMINER_IMG_NAME="docker.io/library/adminer:4.8.1-standalone"
 ####################
 eprintln(){
 	! [ -z "${1}" ] || eprintln 'eprintln err: undefined message'
@@ -39,6 +40,7 @@ build(){
 		-f "${RELDIR}"/Dockerfile-postgres \
 		--tag "${PG_IMG_NAME}" \
 		"${RELDIR}"
+	podman pull ${ADMINER_IMG_NAME}
 }
 up(){
 	common
@@ -51,6 +53,15 @@ up(){
 		--env-file="${RELDIR}/.env" \
 		--name="${PG_CT_NAME}" \
 		localhost/"${PG_IMG_NAME}" &
+
+	podman run --rm \
+		-p="${ADMINER_PORT}:8080" \
+		--name="${ADMINER_CT_NAME}" \
+		${ADMINER_IMG_NAME} &
+}
+down(){
+	podman stop ${ADMINER_CT_NAME} || true
+	podman stop ${PG_CT_NAME} || true
 }
 clean(){
 	printf "This will clean all data. Are you sure? (Y/n): "
