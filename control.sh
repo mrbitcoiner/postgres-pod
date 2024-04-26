@@ -4,7 +4,7 @@ set -e
 ####################
 source .env
 ####################
-readonly HELP_MSG='usage: < build | up | down | clean | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | help >'
+readonly HELP_MSG='usage: < build | up | down | clean | mk-systemd | rm-systemd | loaddb | dumpdb | createdb | dropdb | add_dump_schedule | rm_dump_schedule | psql | help >'
 readonly RELDIR="$(dirname ${0})"
 readonly ADMINER_IMG_NAME="docker.io/library/adminer:4.8.1-standalone"
 ####################
@@ -35,15 +35,43 @@ common(){
 	set_scripts_permissions
 }
 build(){
-	common
 	podman build \
 		-f "${RELDIR}"/Dockerfile-postgres \
 		--tag "${PG_IMG_NAME}" \
 		"${RELDIR}"
 	podman pull ${ADMINER_IMG_NAME}
 }
+mk_systemd() {
+	! [ -e "/etc/systemd/system/${PG_CT_NAME}.service" ] \
+	|| eprintln "service ${PG_CT_NAME} already exists"
+	local user="${USER}"
+	sudo bash -c "cat << EOF > /etc/systemd/system/${PG_CT_NAME}.service
+[Unit]
+Description=Postgres Pod
+After=network.target
+
+[Service]
+Environment=\"PATH=/usr/local/bin:/usr/bin:/bin:${PATH}\"
+User=${user}
+Type=forking
+ExecStart=/bin/bash -c \"cd ${PWD}/${RELDIR}; ./control.sh up\"
+ExecStop=/bin/bash -c \"cd ${PWD}/${RELDIR}; ./control.sh down\"
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+"
+	sudo systemctl enable "${PG_CT_NAME}".service
+}
+rm_systemd() {
+	[ -e "/etc/systemd/system/${PG_CT_NAME}.service" ] || return 0
+	sudo systemctl stop "${PG_CT_NAME}".service || true
+	sudo systemctl disable "${PG_CT_NAME}".service
+	sudo rm /etc/systemd/system/"${PG_CT_NAME}".service
+}
 up(){
-	common
 	podman run --rm \
 		-p="${PG_PORT}:5432" \
 		-v="${RELDIR}/data:/data" \
@@ -52,12 +80,12 @@ up(){
 		--env 'POSTGRES_USER=root' \
 		--env-file="${RELDIR}/.env" \
 		--name="${PG_CT_NAME}" \
-		localhost/"${PG_IMG_NAME}" &
+		"localhost/${PG_IMG_NAME}" &
 
 	podman run --rm \
 		-p="${ADMINER_PORT}:8080" \
 		--name="${ADMINER_CT_NAME}" \
-		${ADMINER_IMG_NAME} &
+		"${ADMINER_IMG_NAME}" &
 }
 down(){
 	scripts/container_stop.sh "${PG_CT_NAME}" || true
@@ -99,11 +127,14 @@ psql(){
   podman exec ${PG_CT_NAME} psql -d "${1}"  -c "${2}"
 }
 ####################
+common
 case ${1} in
 	build) build ;;
 	up) up ;;
 	down) down ;;
 	clean) clean ;;
+	mk-systemd) mk_systemd ;;
+	rm-systemd) rm_systemd ;;
 
   loaddb) loaddb "${2}" "${3}" ;;
   dumpdb) dumpdb "${2}" "${3}" ;;
